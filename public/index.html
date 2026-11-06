@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CODM Map Veto</title>
+<meta name="description" content="Pick/ban rooms for Call of Duty: Mobile series. Share a code, captains ban, pick and choose starting sides.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500&family=Barlow+Semi+Condensed:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<!--APP-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-restart" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
+  <symbol id="i-leave" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+  <symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M10 2h4"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#" id="homelink">Map veto <span>CODM 2026 esports pool</span></a>
+    <div class="actions" id="topactions"></div>
+  </header>
+
+  <!-- Home -->
+  <section id="home" class="home">
+    <section class="hero">
+      <div class="hero-copy">
+        <h1>Ban, pick and choose sides for your CODM series</h1>
+        <p class="lede">Create a room, send the code to both captains, and the match sheet fills in as they go. Built on the 2026 esports map pool.</p>
+        <div class="actions">
+          <a class="btn primary big" href="#new">Create a room</a>
+          <button class="btn ghost big" type="button" id="samplebtn">Try a sample veto</button>
+        </div>
+        <form class="joinbox" id="joinform" autocomplete="off">
+          <label for="j_code">Got a code from your admin?</label>
+          <div class="joinrow">
+            <input class="codein" type="text" id="j_code" maxlength="7" placeholder="K7QM4X" spellcheck="false" autocapitalize="characters" inputmode="text">
+            <button class="btn" type="submit" id="joinbtn">Join room</button>
+          </div>
+          <p class="err" id="joinerr" role="alert"></p>
+          <p class="note" id="servernote">Checking the server…</p>
+        </form>
+      </div>
+      <div class="hero-visual" id="heroviz" aria-hidden="true"></div>
+    </section>
+
+    <section class="block" id="recent" hidden>
+      <div class="block-head"><h2>Your rooms</h2><span class="note">Saved on this device</span></div>
+      <ul class="recent" id="recentlist"></ul>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>How a veto runs</h2></div>
+      <ol class="how">
+        <li><span class="mono">1</span><div><b>Create a room</b><p>Enter both teams, pick the format and adjust the map pool. You get a 6-character code and an invite link.</p></div></li>
+        <li><span class="mono">2</span><div><b>Captains take their seats</b><p>Each captain opens the link on their phone and claims their team. Everyone else can watch the same board.</p></div></li>
+        <li><span class="mono">3</span><div><b>Bans, picks, then sides</b><p>Bans come first, then every map is picked, then each map's starting side. Nothing is left over, and the sheet locks at the end.</p></div></li>
+      </ol>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>Formats</h2><span class="note">Counts with the 2026 pool</span></div>
+      <div class="tablewrap"><table class="formats" id="formats"></table></div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>2026 map pool</h2><span class="note">Switch maps off or add your own when you create a room</span></div>
+      <div class="poolview" id="poolview"></div>
+    </section>
+
+    <footer class="foot">Map pool and pick order from the CODM World Championship 2026 esports settings. Fan-made tool, not affiliated with Activision or TiMi Studio Group.</footer>
+  </section>
+
+  <!-- Create -->
+  <section id="lobby" class="lobby" hidden>
+    <form class="panel" id="createform" autocomplete="off">
+      <h1>Create a veto room</h1>
+      <p class="lede">Set the matchup, then send the code to both captains. Team 1 is whichever side the higher seed chooses.</p>
+      <div class="fields">
+        <label class="field"><span><i class="swatch k1"></i>Team 1</span><input type="text" id="c_t1name" value="Nightjar" maxlength="24"></label>
+        <label class="field"><span>Tag</span><input type="text" id="c_t1tag" value="NJ" maxlength="5"></label>
+        <label class="field"><span><i class="swatch k2"></i>Team 2</span><input type="text" id="c_t2name" value="Ironclad" maxlength="24"></label>
+        <label class="field"><span>Tag</span><input type="text" id="c_t2tag" value="IC" maxlength="5"></label>
+        <label class="field wide"><span>Format</span>
+          <select id="c_fmt">
+            <option value="bo3">Best of 3</option>
+            <option value="bo5" selected>Best of 5</option>
+            <option value="bo7">Best of 7</option>
+            <option value="gf">Grand final, Bo7 with a 1-map advantage</option>
+          </select></label>
+        <label class="field wide" id="c_advwrap" hidden><span>Starts 1–0</span>
+          <select id="c_adv"><option value="1">Team 1 (Winner's Finals)</option><option value="2">Team 2 (Winner's Finals)</option></select></label>
+      </div>
+      <div class="poolwrap">
+        <div class="pw-head"><h3>Map pool</h3><button class="btn ghost small" type="button" id="poolreset" hidden><svg class="ico" aria-hidden="true"><use href="#i-restart"/></svg>Reset to 2026 pool</button></div>
+        <p class="hint">Tap a map to switch it off or back on. Each mode bans until only the maps that get played are left, so more maps means more bans.</p>
+        <div id="pooleditor" class="pooleditor"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="c_timer"> 30-second turns, random choice when time runs out</label>
+      <div class="phases" aria-label="Veto order">
+        <div><small>1</small><b>Bans</b><span id="o_bans"></span></div>
+        <div><small>2</small><b>Picks</b><span id="o_picks"></span></div>
+        <div><small>3</small><b>Sides</b><span id="o_sides"></span></div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" type="submit" id="createbtn">Create room</button>
+        <button class="btn ghost" type="button" id="localbtn">Practice on one screen</button>
+      </div>
+      <p class="err" id="createerr" role="alert"></p>
+    </form>
+
+  </section>
+
+  <!-- Veto -->
+  <section id="veto" class="wrap" style="max-width:none;width:100%" hidden>
+    <div class="roombar" id="roombar" hidden>
+      <div class="code">
+        <span class="k">Room code</span>
+        <div class="row"><span class="v mono" id="codev"></span><button class="btn small" type="button" id="copylink"><svg class="ico"><use href="#i-link"/></svg>Copy invite link</button></div>
+      </div>
+      <div class="seats" id="seats"></div>
+      <div class="actions" id="hostactions"></div>
+    </div>
+
+    <section class="matchup" aria-label="Matchup">
+      <div class="team left"><span class="tag" id="g1"></span><span class="nm" id="n1"></span></div>
+      <div class="vs"><b>vs</b><span id="fmtchip"></span></div>
+      <div class="team right"><span class="tag" id="g2"></span><span class="nm" id="n2"></span></div>
+    </section>
+
+    <div class="rail" id="rail" aria-hidden="true"></div>
+
+    <section class="turn" id="turn" aria-live="polite">
+      <div class="what"><span class="step" id="stepno"></span><h2 id="verb"></h2><p class="sub" id="sub"></p></div>
+      <div class="controls" id="controls"></div>
+    </section>
+
+    <div class="board">
+      <div class="pools" id="pools"></div>
+      <aside class="side">
+        <div class="card">
+          <h3>Match sheet <span class="mono" id="seriescount"></span></h3>
+          <p class="adv" id="advnote" hidden></p>
+          <ol class="sheet" id="sheet"></ol>
+        </div>
+        <div class="card" id="donecard" hidden>
+          <h3>Final veto</h3>
+          <pre class="summary" id="summary"></pre>
+          <button class="btn primary" id="copy" type="button"><svg class="ico"><use href="#i-copy"/></svg>Copy for Discord</button>
+        </div>
+        <div class="card">
+          <h3>Veto log</h3>
+          <ol class="log" id="log"></ol>
+        </div>
+        <p class="note">Bans, then picks, then starting sides. Who picks each map and side follows the CODM World Championship 2026 settings.</p>
+      </aside>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<!--/APP-->
+<script type="module" src="app.js"></script>
+</body>
+</html>
