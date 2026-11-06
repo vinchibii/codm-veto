@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus, RotateCcw, X } from "lucide-react";
-import { toast } from "sonner";
+import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,18 +8,16 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { TeamDot } from "@/components/draft.jsx";
-import { MODES, MODE_KEYS, FORMATS, steps, modePlan, poolProblems, cleanMeta, cleanMapName, MAX_MAPS } from "@/lib/veto-engine.js";
+import { MODES, MODE_KEYS, steps, modePlan, poolProblems, cleanMeta } from "@/lib/veto-engine.js";
 import { api, store, go, PREVIEW } from "@/lib/client.js";
 
-const freshPool = () => Object.fromEntries(MODE_KEYS.map(m => [m, MODES[m].maps.map(name => ({ name, on: true, custom: false }))]));
+// The 2026 maps, each switched on or off. Remembered on this device.
+const freshPool = () => Object.fromEntries(MODE_KEYS.map(m => [m, MODES[m].maps.map(name => ({ name, on: true }))]));
 function loadPool() {
-  const saved = store.get("pool");
-  if (!saved || typeof saved !== "object") return freshPool();
-  const out = {};
+  const saved = store.get("pool"), out = {};
   for (const m of MODE_KEYS) {
-    const list = Array.isArray(saved[m]) ? saved[m].filter(x => x && cleanMapName(x.name)).map(x => ({ name: cleanMapName(x.name), on: x.on !== false, custom: !MODES[m].maps.includes(x.name) })) : [];
-    for (const name of MODES[m].maps) if (!list.some(x => x.name === name)) list.push({ name, on: false, custom: false });
-    out[m] = list;
+    const off = new Set(Array.isArray(saved?.[m]) ? saved[m].filter(x => x && x.on === false).map(x => x.name) : []);
+    out[m] = MODES[m].maps.map(name => ({ name, on: !off.has(name) }));
   }
   return out;
 }
@@ -35,7 +32,6 @@ export function Create({ server }) {
   const [role, setRole] = useState(saved.role || "1");
   const [name, setName] = useState(store.get("name") || "");
   const [pool, setPoolState] = useState(loadPool);
-  const [adding, setAdding] = useState({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -46,16 +42,7 @@ export function Create({ server }) {
   }), [fmt, adv, timer, t1, t2, pool]);
   const problems = poolProblems(meta);
   const L = steps(meta);
-  const isDefault = MODE_KEYS.every(m => pool[m].length === MODES[m].maps.length && pool[m].every(x => x.on && !x.custom));
-
-  function addMap(m) {
-    const n = cleanMapName(adding[m] || "");
-    if (!n) return;
-    if (pool[m].some(x => x.name.toLowerCase() === n.toLowerCase())) return toast.error(`${n} is already in the ${MODES[m].name} pool`);
-    if (pool[m].filter(x => x.on).length >= MAX_MAPS) return toast.error(`A pool can hold up to ${MAX_MAPS} maps`);
-    setPool(p => ({ ...p, [m]: [...p[m], { name: n, on: true, custom: true }] }));
-    setAdding(a => ({ ...a, [m]: "" }));
-  }
+  const isDefault = MODE_KEYS.every(m => pool[m].every(x => x.on));
 
   async function create() {
     setError("");
@@ -147,7 +134,7 @@ export function Create({ server }) {
         <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
           <div className="space-y-1.5">
             <CardTitle className="text-base">Map pool</CardTitle>
-            <CardDescription>Tap a map to switch it off. Each mode bans until only the maps that get played are left.</CardDescription>
+            <CardDescription>Tap a map to leave it out of this match. Each mode bans until only the maps that get played are left.</CardDescription>
           </div>
           {!isDefault && <Button variant="ghost" size="sm" onClick={() => setPool(() => freshPool())}><RotateCcw />Reset</Button>}
         </CardHeader>
@@ -163,21 +150,11 @@ export function Create({ server }) {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {pool[m].map((x, k) => (
-                    <div key={x.name} className={cn("inline-flex h-8 items-center rounded-md border text-xs font-medium shadow-sm transition-colors", x.on ? "bg-secondary" : "border-dashed bg-background text-muted-foreground")}>
-                      <button type="button" aria-pressed={x.on} className={cn("h-full px-3", !x.on && "line-through")}
-                        onClick={() => setPool(p => ({ ...p, [m]: p[m].map((y, j) => (j === k ? { ...y, on: !y.on } : y)) }))}>{x.name}</button>
-                      {x.custom && (
-                        <button type="button" aria-label={`Remove ${x.name}`} className="h-full pr-2 text-muted-foreground hover:text-foreground"
-                          onClick={() => setPool(p => ({ ...p, [m]: p[m].filter((_, j) => j !== k) }))}><X className="size-3.5" /></button>
-                      )}
-                    </div>
+                    <button key={x.name} type="button" aria-pressed={x.on}
+                      className={cn("h-8 rounded-md border px-3 text-xs font-medium shadow-sm transition-colors", x.on ? "bg-secondary hover:bg-secondary/80" : "border-dashed bg-background text-muted-foreground line-through hover:bg-accent")}
+                      onClick={() => setPool(p => ({ ...p, [m]: p[m].map((y, j) => (j === k ? { ...y, on: !y.on } : y)) }))}>{x.name}</button>
                   ))}
                 </div>
-                <form className="flex max-w-xs gap-2" onSubmit={e => { e.preventDefault(); addMap(m); }}>
-                  <Input value={adding[m] || ""} maxLength={24} placeholder={`Add a ${MODES[m].short} map`} aria-label={`Add a ${MODES[m].name} map`} className="h-8"
-                    onChange={e => setAdding(a => ({ ...a, [m]: e.target.value }))} />
-                  <Button type="submit" variant="outline" size="sm"><Plus />Add</Button>
-                </form>
                 {prob && <p className="text-sm text-destructive">{prob.message}</p>}
               </div>
             );

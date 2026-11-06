@@ -37,7 +37,7 @@ export default function App() {
       </main>
       <footer className="border-t">
         <div className="container flex h-12 max-w-screen-xl items-center text-xs text-muted-foreground">
-          Map pool and pick order from the CODM World Championship 2026 esports settings. Fan-made, not affiliated with Activision or TiMi.
+          Map pool from the CODM World Championship 2026 esports settings. Fan-made, not affiliated with Activision or TiMi.
         </div>
       </footer>
       <Toaster position="top-center" />

@@ -14,8 +14,12 @@ export function TeamDot({ team, className }) {
   return <span aria-hidden className={cn("inline-block size-2 shrink-0 rounded-full", team === 1 ? "bg-team1" : "bg-team2", className)} />;
 }
 
+// Looks for public/images/maps/<map-name>.jpg, then .png, then .webp. No image found: a plain card.
+const IMAGE_TYPES = ["jpg", "png", "webp"];
+
 function MapTile({ name, status, tag, can, selected, onSelect, finished }) {
-  const [img, setImg] = useState(!PREVIEW);
+  const [ext, setExt] = useState(PREVIEW ? -1 : 0);
+  const img = ext >= 0 && ext < IMAGE_TYPES.length;
   const st = status.st;
   return (
     <button
@@ -34,7 +38,7 @@ function MapTile({ name, status, tag, can, selected, onSelect, finished }) {
     >
       {img && (
         <div className="aspect-video w-full bg-muted">
-          <img src={`images/maps/${mapSlug(name)}.jpg`} alt="" loading="lazy" onError={() => setImg(false)} className={cn("h-full w-full object-cover", st === "ban" && "grayscale")} />
+          <img src={`images/maps/${mapSlug(name)}.${IMAGE_TYPES[ext]}`} alt="" loading="lazy" onError={() => setExt(e => e + 1)} className={cn("h-full w-full object-cover", st === "ban" && "grayscale")} />
         </div>
       )}
       <div className="flex min-h-11 w-full items-center justify-between gap-2 px-3 py-2">

@@ -4,7 +4,7 @@ Pick/ban rooms for Call of Duty: Mobile series, built with React and [shadcn/ui]
 
 How a room works:
 
-1. **Create.** A captain (or a host who isn't playing) sets the teams, format and map pool, and picks which team they're captaining. They get a 6-character code.
+1. **Create.** A captain (or a host who isn't playing) sets the teams and format, switches off any 2026 maps they don't want, and picks which team they're captaining. They get a 6-character code.
 2. **Join.** The other captain enters the code on the home page, types their name and takes the open team.
 3. **Wait.** Both captains see a waiting room with only who's in and who's ready. The draft opens for both of them once both tap **I'm ready**. A host can start it early.
 4. **Draft.** All bans, then all picks, then starting sides. Every map is either banned or played. At the end, **Copy for Discord** gives a summary.
@@ -42,7 +42,15 @@ The Supabase setup and the three environment variables (`SUPABASE_URL`, `SUPABAS
 
 ## Map images
 
-Put JPGs in `public/images/maps/` named after the map: `summit.jpg`, `hacienda.jpg`, `combine.jpg`, `takeoff.jpg`, `arsenal.jpg`, `tunisia.jpg`, `firing-range.jpg`, `coastal.jpg`, `slums.jpg`, `meltdown.jpg`, `raid.jpg`, `standoff.jpg`, `crossroads-strike.jpg`. Maps you add in the pool editor use the same rule, for example `nuketown.jpg`. Without an image, the map shows as a plain card.
+Put your images in `public/images/maps/` (create the `images` and `maps` folders inside `public` if they're missing). Each file is named after the map in lowercase, with spaces turned into hyphens. JPG, PNG or WebP all work; a landscape image around 640x360 is plenty.
+
+| Mode | File names |
+|---|---|
+| Hardpoint | `summit.jpg`, `hacienda.jpg`, `combine.jpg`, `takeoff.jpg`, `arsenal.jpg` |
+| Control | `raid.jpg`, `standoff.jpg`, `crossroads-strike.jpg` |
+| Search & Destroy | `tunisia.jpg`, `firing-range.jpg`, `coastal.jpg`, `slums.jpg`, `meltdown.jpg` |
+
+`.png` or `.webp` instead of `.jpg` is fine, for example `summit.png`. A map without an image shows as a plain card with its name.
 
 ## Working on it locally
 
@@ -55,6 +63,17 @@ npx vercel dev
 
 To add more shadcn components later: `npx shadcn@latest add dialog` (the project already has `components.json`).
 
-## Changing the default pool or veto order
+## Series order and veto rules
 
-Edit `MODES` and `FORMATS` in `src/lib/veto-engine.js`. Each mode bans until only the maps that get played are left, so the ban count follows the pool size.
+Every format cycles Hardpoint, Control, Search & Destroy:
+
+| Format | Maps |
+|---|---|
+| Best of 3 | HP, CTRL, S&D (each one is the last map left after bans) |
+| Best of 5 | HP, CTRL, S&D, HP, CTRL |
+| Best of 7 | HP, CTRL, S&D, HP, CTRL, S&D, HP |
+| Grand final | HP, CTRL, S&D, HP, CTRL, S&D, with one team starting 1-0 |
+
+Map picks alternate Team 1, Team 2 down the series. Whichever map isn't picked is a decider (the last map left in that mode). Each mode bans until only the maps that get played are left, so nothing is left over. Bans go Hardpoint first, then Control, then S&D.
+
+To change these, edit `MODES` and `FORMATS` in `src/lib/veto-engine.js`.

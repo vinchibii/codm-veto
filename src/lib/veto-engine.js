@@ -1,12 +1,12 @@
 // Shared by the browser (app.js) and the Vercel functions (api/).
-// Default pools and veto orders follow the CODM World Championship 2026 esports settings.
+// Map pools are the CODM World Championship 2026 esports pools. Series order cycles Hardpoint, Control, Search & Destroy.
 // Order of play: all bans, then all picks (in map order), then all starting sides (in map order).
-// Each room carries its own map pool (meta.pool), so admins can switch maps off or add their own.
+// Each room carries its own map pool (meta.pool): the 2026 maps, with any switched off. Custom maps are not allowed.
 
 export const MODES = {
   hp:  { name: "Hardpoint",        short: "HP",   rule: "First to 250",          sides: ["Side A", "Side B"], maps: ["Summit", "Hacienda", "Combine", "Takeoff", "Arsenal"] },
-  snd: { name: "Search & Destroy", short: "S&D",  rule: "First to 9, OT cap 20", sides: ["Attack", "Defend"], maps: ["Tunisia", "Firing Range", "Coastal", "Slums", "Meltdown"] },
-  ctl: { name: "Control",          short: "CTRL", rule: "First to 3 rounds",     sides: ["Attack", "Defend"], maps: ["Raid", "Standoff", "Crossroads Strike"] }
+  ctl: { name: "Control",          short: "CTRL", rule: "First to 3 rounds",     sides: ["Attack", "Defend"], maps: ["Raid", "Standoff", "Crossroads Strike"] },
+  snd: { name: "Search & Destroy", short: "S&D",  rule: "First to 9, OT cap 20", sides: ["Attack", "Defend"], maps: ["Tunisia", "Firing Range", "Coastal", "Slums", "Meltdown"] }
 };
 export const MODE_KEYS = Object.keys(MODES);
 
@@ -15,22 +15,22 @@ export const MODE_KEYS = Object.keys(MODES);
 // Every mode bans until only the maps that get played are left, so no map is ever left over.
 // The ban count follows the pool: bans = maps in pool - picks - decider.
 export const FORMATS = {
-  bo3: { label: "Best of 3", order: ["hp", "snd", "ctl"], modes: {
+  bo3: { label: "Best of 3", order: ["hp", "ctl", "snd"], modes: {
     hp:  { firstBan: 1, decider: [1, 1] },
-    snd: { firstBan: 2, decider: [2, 2] },
-    ctl: { firstBan: 1, decider: [3, 1] } } },
-  bo5: { label: "Best of 5", order: ["hp", "snd", "ctl", "hp", "snd"], modes: {
+    ctl: { firstBan: 2, decider: [2, 2] },
+    snd: { firstBan: 1, decider: [3, 1] } } },
+  bo5: { label: "Best of 5", order: ["hp", "ctl", "snd", "hp", "ctl"], modes: {
     hp:  { firstBan: 1, picks: [[1, 1, 2], [2, 4, 1]] },
-    snd: { firstBan: 2, picks: [[2, 2, 1], [1, 5, 2]] },
-    ctl: { firstBan: 1, decider: [3, 1] } } },
-  bo7: { label: "Best of 7", order: ["hp", "snd", "ctl", "hp", "snd", "ctl", "snd"], modes: {
+    ctl: { firstBan: 2, picks: [[2, 2, 1], [1, 5, 2]] },
+    snd: { firstBan: 1, decider: [3, 1] } } },
+  bo7: { label: "Best of 7", order: ["hp", "ctl", "snd", "hp", "ctl", "snd", "hp"], modes: {
+    hp:  { firstBan: 1, picks: [[1, 1, 2], [2, 4, 1]], decider: [7, 2] },
+    ctl: { firstBan: 2, picks: [[2, 2, 1], [1, 5, 2]] },
+    snd: { firstBan: 1, picks: [[1, 3, 2], [2, 6, 1]] } } },
+  gf:  { label: "Grand final, Bo7 with map advantage", order: ["hp", "ctl", "snd", "hp", "ctl", "snd"], modes: {
     hp:  { firstBan: 1, picks: [[1, 1, 2], [2, 4, 1]] },
-    snd: { firstBan: 2, picks: [[2, 2, 1], [1, 5, 2]], decider: [7, 2] },
-    ctl: { firstBan: 1, picks: [[1, 3, 2], [2, 6, 1]] } } },
-  gf:  { label: "Grand final, Bo7 with map advantage", order: ["hp", "snd", "ctl", "hp", "ctl", "snd"], modes: {
-    hp:  { firstBan: 1, picks: [[1, 1, 2], [2, 4, 1]] },
-    snd: { firstBan: 2, picks: [[2, 2, 1], [1, 6, 2]] },
-    ctl: { firstBan: 1, picks: [[1, 3, 2], [2, 5, 1]] } } }
+    ctl: { firstBan: 2, picks: [[2, 2, 1], [1, 5, 2]] },
+    snd: { firstBan: 1, picks: [[1, 3, 2], [2, 6, 1]] } } }
 };
 
 export const PHASE = { ban: "Bans", pick: "Picks", decider: "Picks", side: "Sides" };
@@ -138,12 +138,8 @@ export function cleanPool(p) {
   const out = {};
   for (const m of MODE_KEYS) {
     if (!Array.isArray(p?.[m])) { out[m] = [...MODES[m].maps]; continue; }
-    const seen = new Set(), list = [];
-    for (const raw of p[m]) {
-      const n = cleanMapName(raw), k = n.toLowerCase();
-      if (n && !seen.has(k) && list.length < MAX_MAPS) { seen.add(k); list.push(n); }
-    }
-    out[m] = list;
+    const want = new Set(p[m].filter(x => typeof x === "string"));
+    out[m] = MODES[m].maps.filter(x => want.has(x));
   }
   return out;
 }
